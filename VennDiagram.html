@@ -1,0 +1,326 @@
+<HTML>
+
+
+
+<BODY>    
+
+<div class="ui">
+    <div class="controls">
+        Area Circle X: <input id="rx" type="number" onchange="UpdateXNumbers(this.value)"/><br><br>
+        Area Circle Y: <input id="ry" type="number"  onchange="UpdateYNumbers(this.value)"/><br><br>
+		Area    Union: <input id="aUnion" type="number" onchange="UpdateUNumbers(this.value)"/><br>
+    </div>
+    <div class="results">
+        Circle X Area: <span style="color:blue" id="AreaXvalue"></span>  Small Circle Radius: <span style="color:blue" id="SmallRadiusValue"></span><br>
+        Circle Y Area: <span style="color:blue" id="AreaYvalue"></span>  Large Circle Radius: <span style="color:blue" id="LargeRadiusValue"></span><br>
+		Union Area: <span style="color:blue" id="AreaUvalue"></span>  Iterations: <span style="color:blue" id="CircDist"></span><br>
+        Small Circle Angle: <span style="color:blue" id="SmallAngleValue"></span> Small Segment Area: <span style="color:blue" id="SmallSegValue"></span><br>
+        Large Circle Angle: <span style="color:blue" id="LargeAngleValue"></span> Large Segment Area: <span style="color:blue" id="LargeSegValue"></span><br>
+        Starter Union Area: <span style="color:blue" id="StartAreaUvalue"></span>  Arc Distance:<span style="color:blue" id="ArcDistValue"></span><br>
+		Test Union Area: <span style="color:blue" id="TestAreaUvalue"></span><br>
+    </div>
+</div>
+
+
+  <style>
+
+    path:hover {stroke:black;}
+	.ui {
+            display: flex;
+        }
+
+        .ui > div {
+            margin: 0 10px;
+        }
+
+        .ui .controls input {
+            vertical-align: middle;
+			width: 100px;
+			height: 20px;
+        }
+	    .ui .results {
+            float: right;
+        }
+		
+        svg {
+            background: #ddd;
+        }
+
+  </style>
+
+  
+
+  <svg width="700" height="560" xmlns="http://www.w3.org/2000/svg">
+    <path id="arc1"  d="" fill="blue" fill-opacity=".5"/>
+    <path id="arc2" d="" fill="yellow" fill-opacity=".5"/> 
+    <path id="arc3" d="" fill="green" fill-opacity=".5"/> 		 
+	
+  </svg>
+
+  <script>
+    //capture all the element you plan to change
+	
+	var RxMin=1;
+	var RxMax=4000;
+    var RyMin=1;
+	var RyMax=4000;
+	var AreaX=0;
+	var AreaY=0;
+	var AreaU=0;
+	
+	var rxElement = document.getElementById("rx");
+	var ryElement = document.getElementById("ry");
+	var AreaXElement=document.getElementById("AreaXvalue");
+	var AreaYElement=document.getElementById("AreaYvalue");
+	var AreaUElement=document.getElementById("AreaUvalue");
+	
+	function UpdateXNumbers(e)
+	{
+	 AreaX=parseInt(e);
+	 //Keep the area inside it's range
+	 if(AreaX>RxMax)
+	 {
+	  AreaX=RxMax;
+	  rxElement=AreaX;
+	 }
+	 else if(AreaX<RxMin)
+	 {
+	  AreaX=RxMin;
+	  rxElement=AreaX;
+	 }
+	 
+	 AreaXElement.innerHTML=AreaX;
+	  
+	 
+	 //RyMin=AreaX;
+	 if(AreaY!=0&&AreaU!=0)
+	  {
+		DoMathStuff(AreaX,AreaY);
+	  }
+	 
+	} 
+		
+	function UpdateYNumbers(e)
+	{ 
+	 AreaY=parseInt(e);
+	 //Keep the area inside it's range
+	 if(AreaY>RyMax)
+	 {
+	  AreaY=RyMax;
+	  ryElement.value=RyMax;
+	 }
+	 else if(AreaY<RyMin)
+	 {
+	  AreaY=RyMin;
+	  ryElement.value=RyMin;
+	 }
+	 
+	 AreaYElement.innerHTML=AreaY;
+	  
+	 //RxMax=AreaY;
+	 if(AreaX!=0&&AreaU!=0)
+	  {	
+	   DoMathStuff(AreaX,AreaY);
+	  }
+	}
+	 
+	 
+	
+	function UpdateUNumbers(e)
+	{
+	 AreaU=parseInt(e);
+	 if((AreaU>AreaY||AreaU>AreaX)&&AreaX!=0&&AreaY!=0)
+	 {
+	   if(AreaY<AreaX){AreaU=AreaY;}
+	   else{AreaU=AreaX;}
+	   document.getElementById("aUnion").value=AreaU;
+	 }
+	 
+	 AreaUElement.innerHTML=AreaU;
+	 //Make sure the user cant make the one of the circles smaller than the union 
+	 RxMin=AreaU;
+	 RyMin=AreaU;
+	 if(AreaX!=0&&AreaY!=0)
+	 {
+	  DoMathStuff(AreaX,AreaY);  
+     }		
+	}
+	
+	
+	function DoMathStuff(TempAreaX,TempAreaY)
+	{
+	   var EasyPI = Math.round(Math.PI*100000)/100000;
+	   var SmallAngle;
+	   var SmallArea;
+	   var LargeArea;
+	   var SmallRadius;
+	   var LargeRadius;
+       var arcDist;	
+       var AcuteAngle=false;
+	   var XisSmallest=false;
+       var StartAreaU;
+	   var LargeAngle;
+	   var LargeSeg;
+	   var SmallSeg;
+	   var SmallDist;
+	   var LargeDist;
+	   
+       var TestAreaU=-1;   	
+	   var EscapeHatch=0;
+	   var AngleMove=EasyPI/2;
+	
+	   //figure out which is the small circle
+	   if(TempAreaX>TempAreaY)
+       {	   
+	    SmallArea=TempAreaY;
+	    LargeArea=TempAreaX;
+		}
+       else
+       {
+	    XisSmallest=true;
+	    SmallArea=TempAreaX;
+	    LargeArea=TempAreaY;
+       }	   
+  	   //do math stuff
+	   //find the radiuses given the areas
+	   SmallRadius=Math.round(Math.sqrt(SmallArea/EasyPI)*100)/100;
+	   LargeRadius=Math.round(Math.sqrt(LargeArea/EasyPI)*100)/100;
+	   
+   	   
+	   //make the angle of the small circle to the join point 90 degrees
+	   SmallAngle=EasyPI/2;
+	   //the distance of the begining arc is 2x the radius of smaller circle
+	   arcDist = SmallRadius*2;
+	   //the distance of the begining small cirle to the join line is 0
+	   SmallDist=0;
+	   
+	   //find the angle of the large circle to the join point
+	   LargeAngle=Math.asin(arcDist*.5/LargeRadius);
+	   //the distance of the begining Y cirle to the join line 
+	   LargeDist=Math.cos(LargeAngle)*LargeRadius;
+       //find the area of the union
+       LargeSeg=LargeArea*LargeAngle/EasyPI;
+       SmallSeg=SmallArea/2;  
+	   // StartAreaU=(SmallArea*((SmallAngle)/(EasyPI))-(SmallDist*arcDist*.5))+(LargeArea*((LargeAngle)/(EasyPI))-(LargeDist*arcDist*.5));
+	   //when the arc is 90 the triangle is 0
+	   StartAreaU=SmallSeg-0+LargeSeg-LargeDist*SmallRadius;
+	   if(AreaU!=0)
+	   {
+	    //is the Area greater than the start area?
+		if(AreaU>StartAreaU)
+		{
+		  AcuteAngle=false;
+		   TestAreaU=StartAreaU;
+		  //test 135 d	egrees
+		  AngleMove=EasyPI/2;
+		  EscapeHatch=1;
+		  do
+		  {
+		    EscapeHatch++;
+			AngleMove=AngleMove/2;
+			if(TestAreaU>AreaU)
+			{
+		     SmallAngle=SmallAngle-AngleMove;
+			}
+            else
+            {
+			 SmallAngle=SmallAngle+AngleMove;
+            } 			
+		    arcDist = SmallRadius*2*Math.sin(SmallAngle);
+		    SmallDist=Math.cos(SmallAngle)*SmallRadius;
+		    LargeAngle=Math.asin((arcDist*.5)/(LargeRadius));
+		    LargeDist=Math.cos(LargeAngle)*LargeRadius;
+		    //the area of the circle multiplied by the ratio of angle over a full cirlce angle
+			//give the area of the slice or segment
+			LargeSeg=LargeArea*LargeAngle/EasyPI;
+			SmallSeg=SmallArea*SmallAngle/EasyPI;
+		    TestAreaU=(SmallSeg-(SmallDist*arcDist*.5))+(LargeSeg-(LargeDist*arcDist*.5));
+		    TestAreaU=Math.round(TestAreaU);
+		  }
+           while((AreaU!=TestAreaU)&&EscapeHatch<20);  		  
+		}
+		else if(AreaU<StartAreaU)
+		{
+		  AcuteAngle=true;
+		  TestAreaU=StartAreaU;
+		  //test 45 degrees
+		  AngleMove=EasyPI/2;
+		  EscapeHatch=1;
+          do
+          {		  
+		    EscapeHatch++;
+			AngleMove=AngleMove/2;
+			if(TestAreaU>AreaU)
+			{
+		     SmallAngle=SmallAngle-AngleMove;
+			}
+            else
+            {
+			 SmallAngle=SmallAngle+AngleMove;
+            } 			
+		    arcDist = SmallRadius*2*Math.sin(SmallAngle);
+		    SmallDist=Math.cos(SmallAngle)*SmallRadius;
+		    LargeAngle=Math.asin((arcDist*.5)/(LargeRadius));
+		    LargeDist=Math.cos(LargeAngle)*LargeRadius;
+			//the area of the circle multiplied by the ratio of angle over a full cirlce angle
+			//give the area of the slice or segment
+			LargeSeg=LargeArea*LargeAngle/EasyPI;
+			SmallSeg=SmallArea*SmallAngle/EasyPI;
+		    TestAreaU=(SmallSeg-SmallDist*arcDist*.5)+(LargeSeg-LargeDist*arcDist*.5);
+		    TestAreaU=Math.round(TestAreaU);
+		  } 
+		  while((AreaU!=TestAreaU)&&EscapeHatch<20); 
+		}
+	   }
+     //show results
+	 LargeRadiusValue.innerHTML=LargeRadius;
+	 SmallRadiusValue.innerHTML=SmallRadius;
+	 SmallAngleValue.innerHTML=Math.round(SmallAngle*100000)/100000;
+	 LargeAngleValue.innerHTML=Math.round(LargeAngle*100000)/100000;
+	 SmallSegValue.innerHTML=Math.round(SmallSeg*100000)/100000;
+	 LargeSegValue.innerHTML=Math.round(LargeSeg*100000)/100000;
+	 StartAreaUvalue.innerHTML=Math.round(StartAreaU*100000)/100000;
+	 TestAreaUvalue.innerHTML=TestAreaU;
+	 CircDist.innerHTML=EscapeHatch;
+	 ArcDistValue.innerHTML=arcDist;
+	 BuildArcs(SmallRadius,LargeRadius,arcDist,AcuteAngle,XisSmallest);
+	}
+	
+	function BuildArcs(SmallRadius,LargeRadius,arcDist,AcuteAngle,XisSmallest)
+	{
+	   
+	  if(AcuteAngle&&XisSmallest)
+	  {
+	    var PathArc1Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 0, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 1, 0, -" + arcDist*5 + " z";
+  	    var PathArc2Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 1, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, -" + arcDist*5 + " z";
+	    var PathArc3Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, -" + arcDist*5 + " z";
+	  }
+	  else if(!AcuteAngle&&XisSmallest)
+	  {
+	    var PathArc1Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 1, 0, -" + arcDist*5 + " z";
+	    var PathArc2Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 1, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
+	    var PathArc3Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
+	  }
+	  else if(AcuteAngle&&!XisSmallest)
+	  {
+        var PathArc1Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 0, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 1, 0, -" + arcDist*5 + " z";
+  	    var PathArc2Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 1, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 0, 0, -" + arcDist*5 + " z";
+	    var PathArc3Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 0, 0, -" + arcDist*5 + " z";  
+	  }
+	  else if(!AcuteAngle&&!XisSmallest)
+	  {
+	    var PathArc1Str = "M300,100 a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 1, 0, -" + arcDist*5 + " z";
+	    var PathArc2Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 1, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
+	    var PathArc3Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
+	  }
+	  arc1.setAttribute("d",PathArc1Str);
+	  arc2.setAttribute("d",PathArc2Str);
+	  arc3.setAttribute("d",PathArc3Str);
+	}
+
+
+  </script>
+
+  </BODY>
+
+</HTML>  
