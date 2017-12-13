@@ -73,6 +73,9 @@
 	var AreaXElement=document.getElementById("AreaXvalue");
 	var AreaYElement=document.getElementById("AreaYvalue");
 	var AreaUElement=document.getElementById("AreaUvalue");
+	var arc1Element=document.getElementById("arc1");
+	var arc2Element=document.getElementById("arc2");
+	var arc3Element=document.getElementById("arc3");
 	
 	function UpdateXNumbers(e)
 	{
@@ -313,9 +316,9 @@
 	    var PathArc2Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 1, 1, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
 	    var PathArc3Str = "M300,100 a " + SmallRadius*5 + "," + SmallRadius*5 + ", 0, 0, 0, 0, " + arcDist*5 + "  a " + LargeRadius*5 + "," + LargeRadius*5 + ", 0, 1, 0, 0, -" + arcDist*5 + " z";
 	  }
-	  arc1.setAttribute("d",PathArc1Str);
-	  arc2.setAttribute("d",PathArc2Str);
-	  arc3.setAttribute("d",PathArc3Str);
+	  arc1Element.setAttribute("d",PathArc1Str);
+	  arc2Element.setAttribute("d",PathArc2Str);
+	  arc3Element.setAttribute("d",PathArc3Str);
 	}
 
 
